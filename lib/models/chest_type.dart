@@ -24,21 +24,21 @@ class ChestType {
 
 const List<ChestType> chestTypes = [
   ChestType(
-    name: 'Comum',
+    name: 'Common',
     price: 100,
     characterChance: 0.3,
     color: Color(0xFFB0BEC5),
     image: 'assets/images/icons/chest_common.png',
   ),
   ChestType(
-    name: 'Raro',
+    name: 'Rare',
     price: 300,
     characterChance: 0.6,
     color: Color(0xFF1976D2),
     image: 'assets/images/icons/chest_rare.png',
   ),
   ChestType(
-    name: 'Lendário',
+    name: 'Legendary',
     price: 800,
     characterChance: 0.9,
     color: Color(0xFFFFD600),

@@ -2,7 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
+import '../models/characters.dart' as madness_models;
 import 'chest_screen.dart';
+import 'character_collection_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,27 +13,98 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   int coins = 1000;
+  int upgradePoints = 0;
+  int unlockedCharacters = 0;
   DateTime? lastClaimed;
+  DateTime? lastEasterEggClaimed;
   bool loading = true;
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadCoins();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
+    _animationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _animationController.reverse();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Recarrega os dados quando o app voltar ao primeiro plano
+      _loadCoins();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recarrega os dados quando as dependências mudarem (ex: voltar para esta tela)
     _loadCoins();
   }
 
   Future<void> _loadCoins() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      coins = prefs.getInt('coins') ?? 1000;
-      final last = prefs.getString('lastClaimed');
-      if (last != null) {
-        lastClaimed = DateTime.tryParse(last);
-      }
-      loading = false;
-    });
+
+    // Obter valores das preferências
+    final newCoins = prefs.getInt('coins') ?? 1000;
+    final newUpgradePoints = prefs.getInt('upgradePoints') ?? 0;
+    final charList = prefs.getStringList('unlockedCharacters') ?? [];
+    final newUnlockedCharacters = charList.length;
+
+    DateTime? newLastClaimed;
+    final last = prefs.getString('lastClaimed');
+    if (last != null) {
+      newLastClaimed = DateTime.tryParse(last);
+    }
+
+    DateTime? newLastEasterEggClaimed;
+    final lastEgg = prefs.getString('lastEasterEggClaimed');
+    if (lastEgg != null) {
+      newLastEasterEggClaimed = DateTime.tryParse(lastEgg);
+    }
+
+    // Verificar se algum valor mudou antes de chamar setState
+    if (loading ||
+        coins != newCoins ||
+        upgradePoints != newUpgradePoints ||
+        unlockedCharacters != newUnlockedCharacters ||
+        lastClaimed != newLastClaimed ||
+        lastEasterEggClaimed != newLastEasterEggClaimed) {
+      setState(() {
+        coins = newCoins;
+        upgradePoints = newUpgradePoints;
+        unlockedCharacters = newUnlockedCharacters;
+        lastClaimed = newLastClaimed;
+        lastEasterEggClaimed = newLastEasterEggClaimed;
+        loading = false;
+      });
+    }
   }
 
   Future<void> _saveCoins() async {
@@ -39,6 +112,12 @@ class _HomePageState extends State<HomePage> {
     await prefs.setInt('coins', coins);
     if (lastClaimed != null) {
       await prefs.setString('lastClaimed', lastClaimed!.toIso8601String());
+    }
+    if (lastEasterEggClaimed != null) {
+      await prefs.setString(
+        'lastEasterEggClaimed',
+        lastEasterEggClaimed!.toIso8601String(),
+      );
     }
   }
 
@@ -134,13 +213,27 @@ class _HomePageState extends State<HomePage> {
                     SizedBox(height: 24),
                     _buildLogo(logoSize),
                     SizedBox(height: 16),
-                    Text(
-                      'SOMEWHERE IN NEVADA',
-                      style: TextStyle(
-                        color: AppColors.secondary,
-                        fontSize: fontSubtitle,
-                        letterSpacing: 3,
-                        fontWeight: FontWeight.w600,
+                    GestureDetector(
+                      onTap: () {
+                        _addCoinsEasterEgg();
+                        _animationController.forward();
+                      },
+                      child: AnimatedBuilder(
+                        animation: _animationController,
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale: _scaleAnimation.value,
+                            child: Text(
+                              'SOMEWHERE IN NEVADA',
+                              style: TextStyle(
+                                color: AppColors.secondary,
+                                fontSize: fontSubtitle,
+                                letterSpacing: 3,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     SizedBox(height: 32),
@@ -187,15 +280,61 @@ class _HomePageState extends State<HomePage> {
                           vertical: 16,
                           horizontal: 8,
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        child: Column(
                           children: [
-                            _buildStatItem(context, '145', 'KILLS', fontStats),
-                            _buildStatItem(
-                              context,
-                              '27',
-                              'CHARACTERS',
-                              fontStats,
+                            const Text(
+                              "COLLECTION STATS",
+                              style: TextStyle(
+                                color: AppColors.secondary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                _buildStatItem(
+                                  context,
+                                  '$unlockedCharacters',
+                                  'CHARACTERS',
+                                  fontStats,
+                                  icon: Icons.people,
+                                  color: AppColors.purple,
+                                  showDetails: true,
+                                  details:
+                                      '${madness_models.allCharacters.length} total',
+                                  onTap: () =>
+                                      _navigateToCharactersScreen(context),
+                                ),
+                                _buildStatItem(
+                                  context,
+                                  '$upgradePoints',
+                                  'UPGRADE POINTS',
+                                  fontStats,
+                                  icon: Icons.upgrade,
+                                  color: AppColors.green,
+                                  showDetails: true,
+                                  details: 'Use in characters',
+                                  onTap: () {
+                                    if (unlockedCharacters > 0) {
+                                      _navigateToCharactersScreen(context);
+                                    } else {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Unlock characters first!',
+                                          ),
+                                          backgroundColor: AppColors.primary,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -340,28 +479,60 @@ class _HomePageState extends State<HomePage> {
     BuildContext context,
     String value,
     String label,
-    double fontStats,
-  ) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            color: AppColors.primary,
-            fontSize: fontStats + 6,
-            fontWeight: FontWeight.bold,
-          ),
+    double fontStats, {
+    IconData? icon,
+    Color? color,
+    bool showDetails = false,
+    String? details,
+    VoidCallback? onTap,
+  }) {
+    final displayColor = color ?? AppColors.primary;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: displayColor.withOpacity(0.3), width: 1.5),
         ),
-        const SizedBox(height: 5),
-        Text(
-          label,
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: fontStats,
-            fontWeight: FontWeight.w500,
-          ),
+        child: Column(
+          children: [
+            if (icon != null) Icon(icon, color: displayColor, size: 28),
+            if (icon != null) const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                color: displayColor,
+                fontSize: fontStats + 6,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: fontStats,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (showDetails && details != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  details,
+                  style: TextStyle(
+                    color: displayColor.withOpacity(0.7),
+                    fontSize: fontStats - 4,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -424,9 +595,9 @@ class _HomePageState extends State<HomePage> {
           ),
           _buildNavButton(
             context,
-            Icons.quiz,
-            'QUIZ',
-            onTap: () => _navigateToQuizScreen(context),
+            Icons.people_alt,
+            'CARDS',
+            onTap: () => _navigateToCharactersScreen(context),
           ),
           _buildNavButton(
             context,
@@ -553,7 +724,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _navigateToChestScreen(BuildContext context) async {
-    await Navigator.push(
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChestScreen(
@@ -567,24 +738,130 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+
+    if (result != null && result['dataChanged'] == true) {
+      _loadCoins();
+    }
   }
 
-  void _navigateToQuizScreen(BuildContext context) {
-    // Aqui seria a navegação para a tela de quiz
+  void _navigateToCharactersScreen(BuildContext context) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CharacterCollectionScreen(),
+      ),
+    );
+
+    if (result != null && result['dataChanged'] == true) {
+      _loadCoins();
+    }
+  }
+
+  void _navigateToGameScreen(BuildContext context) {
+    setState(() {
+      coins += 1000;
+    });
+    _saveCoins();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Quiz Screen will be implemented soon!'),
-        backgroundColor: AppColors.purple,
+        content: Text('+1000 Madness Coins (test mode)!'),
+        backgroundColor: AppColors.green,
+        duration: Duration(seconds: 2),
       ),
     );
   }
 
-  void _navigateToGameScreen(BuildContext context) {
-    // Aqui seria a navegação para a tela do jogo
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Mini Game Screen will be implemented soon!'),
-        backgroundColor: AppColors.green,
+  bool get canClaimEasterEgg {
+    if (lastEasterEggClaimed == null) return true;
+    final now = DateTime.now();
+    return now.difference(lastEasterEggClaimed!).inHours >= 24 ||
+        now.day != lastEasterEggClaimed!.day ||
+        now.month != lastEasterEggClaimed!.month ||
+        now.year != lastEasterEggClaimed!.year;
+  }
+
+  void _addCoinsEasterEgg() {
+    if (!canClaimEasterEgg) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'You already found the Easter Egg today! Come back tomorrow!',
+          ),
+          backgroundColor: AppColors.primary,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      coins += 1000;
+      lastEasterEggClaimed = DateTime.now();
+    });
+    _saveCoins();
+
+    // Mostrar um diálogo personalizado com animação
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text(
+          'EASTER EGG FOUND!',
+          style: TextStyle(
+            color: AppColors.secondary,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF2C2C2C),
+                  border: Border.all(color: AppColors.secondary, width: 2),
+                ),
+                child: const Icon(
+                  Icons.monetization_on,
+                  color: AppColors.secondary,
+                  size: 50,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                '+1000 MADNESS COINS',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'You discovered the Nevada secret!',
+                style: AppTextStyles.body,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'AWESOME!',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
