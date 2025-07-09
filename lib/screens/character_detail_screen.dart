@@ -297,6 +297,28 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
     }
   }
 
+  // Método para mapear strings de nomes de ícones para IconData constantes
+  IconData _getIconForAbility(String iconName) {
+    switch (iconName) {
+      case 'bolt':
+        return Icons.bolt;
+      case 'local_fire_department':
+        return Icons.local_fire_department;
+      case 'sports_martial_arts':
+        return Icons.sports_martial_arts;
+      case 'health_and_safety':
+        return Icons.health_and_safety;
+      case 'crisis_alert':
+        return Icons.crisis_alert;
+      case 'sentiment_very_dissatisfied':
+        return Icons.sentiment_very_dissatisfied;
+      case 'rotate_90_degrees_ccw':
+        return Icons.rotate_90_degrees_ccw;
+      default:
+        return Icons.star; // Ícone padrão
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final rarityColor = _getRarityColor(widget.character.rarity);
@@ -1164,25 +1186,8 @@ class _CharacterDetailScreenState extends State<CharacterDetailScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    // Use o nome do ícone como string
-                    IconData(
-                      ability.icon == 'bolt'
-                          ? 0xe0e0
-                          : ability.icon == 'local_fire_department'
-                          ? 0xe23a
-                          : ability.icon == 'sports_martial_arts'
-                          ? 0xf054a
-                          : ability.icon == 'health_and_safety'
-                          ? 0xe1ce
-                          : ability.icon == 'crisis_alert'
-                          ? 0xf05d4
-                          : ability.icon == 'sentiment_very_dissatisfied'
-                          ? 0xe815
-                          : ability.icon == 'rotate_90_degrees_ccw'
-                          ? 0xe437
-                          : 0xe25a, // fallback icon
-                      fontFamily: 'MaterialIcons',
-                    ),
+                    // Usar ícones predefinidos baseados no nome da string
+                    _getIconForAbility(ability.icon),
                     color: isUnlocked ? AppColors.purple : Colors.grey,
                     size: 24,
                   ),

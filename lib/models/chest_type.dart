@@ -6,6 +6,7 @@ class ChestType {
   final double characterChance;
   final Color color;
   final String image;
+  final String representativeCharacter;
 
   const ChestType({
     required this.name,
@@ -13,6 +14,7 @@ class ChestType {
     required this.characterChance,
     required this.color,
     required this.image,
+    required this.representativeCharacter,
   });
 
   // Getter para compatibilidade com tela de baús
@@ -28,20 +30,23 @@ const List<ChestType> chestTypes = [
     price: 100,
     characterChance: 0.3,
     color: Color(0xFFB0BEC5),
-    image: 'assets/images/icons/chest_common.png',
+    image: 'assets/images/characters/grunt.png', // Grunt para baú comum
+    representativeCharacter: 'Grunt',
   ),
   ChestType(
     name: 'Rare',
     price: 300,
     characterChance: 0.6,
     color: Color(0xFF1976D2),
-    image: 'assets/images/icons/chest_rare.png',
+    image: 'assets/images/characters/sanford.png', // Sanford para baú raro
+    representativeCharacter: 'Sanford',
   ),
   ChestType(
     name: 'Legendary',
     price: 800,
     characterChance: 0.9,
     color: Color(0xFFFFD600),
-    image: 'assets/images/icons/chest_legendary.png',
+    image: 'assets/images/characters/trickyL.png', // Tricky para baú lendário
+    representativeCharacter: 'Tricky',
   ),
 ];

@@ -69,13 +69,6 @@ class _ChestScreenState extends State<ChestScreen>
   @override
   void dispose() {
     _cardController.dispose();
-
-    // Notificar a tela inicial que os dados podem ter mudado
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Isso forçará a atualização da tela inicial quando voltar para ela
-      Navigator.of(context).pop({'dataChanged': true});
-    });
-
     super.dispose();
   }
 
@@ -227,6 +220,12 @@ class _ChestScreenState extends State<ChestScreen>
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -294,16 +293,80 @@ class _ChestScreenState extends State<ChestScreen>
                             curve: Curves.easeInOut,
                             height: isThisOpening ? 120 : 100,
                             width: isThisOpening ? 120 : 100,
-                            child: Image.asset(
-                              chest.image,
-                              fit: BoxFit.contain,
-                              color: isThisOpening
-                                  ? chest.color.withOpacity(0.7)
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: chest.color, width: 2),
+                              boxShadow: isThisOpening
+                                  ? [
+                                      BoxShadow(
+                                        color: chest.color.withOpacity(0.4),
+                                        blurRadius: 8,
+                                        spreadRadius: 2,
+                                      ),
+                                    ]
                                   : null,
+                            ),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(13),
+                                  child: Image.asset(
+                                    chest.image,
+                                    fit: BoxFit.cover,
+                                    colorBlendMode: isThisOpening
+                                        ? BlendMode.overlay
+                                        : null,
+                                    color: isThisOpening
+                                        ? chest.color.withOpacity(0.5)
+                                        : null,
+                                  ),
+                                ),
+                                if (isThisOpening)
+                                  Positioned.fill(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(13),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                          colors: [
+                                            Colors.transparent,
+                                            chest.color.withOpacity(0.7),
+                                          ],
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.auto_awesome,
+                                          color: Colors.white,
+                                          size: 30,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 10),
-                          Text(chest.name, style: AppTextStyles.title),
+                          Text(
+                            '${chest.name} Chest',
+                            style: AppTextStyles.title,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.person, color: chest.color, size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Representado por: ${chest.representativeCharacter}',
+                                style: TextStyle(
+                                  color: chest.color,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 6),
                           Text(
                             'Price: ${chest.price} coins',
@@ -503,14 +566,57 @@ class _ChestScreenState extends State<ChestScreen>
                             // Nome do personagem
                             Padding(
                               padding: const EdgeInsets.all(16.0),
-                              child: Text(
-                                rewardedCharacter!.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 24,
-                                ),
-                                textAlign: TextAlign.center,
+                              child: Column(
+                                children: [
+                                  Text(
+                                    rewardedCharacter!.name,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 24,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  // Health indicator
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.shade800.withOpacity(
+                                        0.2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: Colors.red.shade800.withOpacity(
+                                          0.5,
+                                        ),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.favorite,
+                                          color: Colors.red.shade800,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "HEALTH: ${rewardedCharacter!.health}",
+                                          style: TextStyle(
+                                            color: Colors.red.shade800,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
 
@@ -626,6 +732,10 @@ class _ChestScreenState extends State<ChestScreen>
                               ),
                               child: Column(
                                 children: [
+                                  _buildStatRow(
+                                    'HEALTH',
+                                    rewardedCharacter!.health.toString(),
+                                  ),
                                   _buildStatRow(
                                     'TYPE',
                                     rewardedCharacter!.type,

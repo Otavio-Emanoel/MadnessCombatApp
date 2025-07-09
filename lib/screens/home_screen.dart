@@ -724,7 +724,7 @@ class _HomePageState extends State<HomePage>
   }
 
   void _navigateToChestScreen(BuildContext context) async {
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChestScreen(
@@ -739,22 +739,20 @@ class _HomePageState extends State<HomePage>
       ),
     );
 
-    if (result != null && result['dataChanged'] == true) {
-      _loadCoins();
-    }
+    // Sempre recarrega os dados ao retornar da tela de baús
+    _loadCoins();
   }
 
   void _navigateToCharactersScreen(BuildContext context) async {
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const CharacterCollectionScreen(),
       ),
     );
 
-    if (result != null && result['dataChanged'] == true) {
-      _loadCoins();
-    }
+    // Sempre recarrega os dados ao retornar da tela de coleção
+    _loadCoins();
   }
 
   void _navigateToGameScreen(BuildContext context) {
