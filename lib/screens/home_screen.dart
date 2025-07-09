@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 
+
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -155,16 +157,11 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
-      child: const Text(
-        'MADNESS\nCOMBAT',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 2,
-          height: 1.2,
-        ),
+      child: const Image(
+        image: AssetImage('assets/images/icons/icon.png'),
+        fit: BoxFit.cover,
+        width: 100,
+        height: 100,
       ),
     );
   }
