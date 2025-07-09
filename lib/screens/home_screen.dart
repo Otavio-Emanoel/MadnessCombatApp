@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/constants.dart';
+import 'chest_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -498,40 +499,42 @@ class _HomePageState extends State<HomePage> {
           ),
           textAlign: TextAlign.center,
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF2C2C2C),
-                border: Border.all(color: AppColors.secondary, width: 2),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF2C2C2C),
+                  border: Border.all(color: AppColors.secondary, width: 2),
+                ),
+                child: const Icon(
+                  Icons.monetization_on,
+                  color: AppColors.secondary,
+                  size: 50,
+                ),
               ),
-              child: const Icon(
-                Icons.monetization_on,
-                color: AppColors.secondary,
-                size: 50,
+              const SizedBox(height: 20),
+              const Text(
+                '100 MADNESS COINS',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              '100 MADNESS COINS',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              const SizedBox(height: 5),
+              Text(
+                claimed
+                    ? 'Coins added to your account!'
+                    : 'Come back tomorrow for more!',
+                style: AppTextStyles.body,
               ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              claimed
-                  ? 'Coins added to your account!'
-                  : 'Come back tomorrow for more!',
-              style: AppTextStyles.body,
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -549,13 +552,19 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _navigateToChestScreen(BuildContext context) {
-    // Aqui seria a navegação para a tela do baú
-    // Por enquanto apenas mostra um SnackBar
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Chest Screen will be implemented soon!'),
-        backgroundColor: AppColors.orange,
+  void _navigateToChestScreen(BuildContext context) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChestScreen(
+          coins: coins,
+          onCoinsChanged: (newCoins) {
+            setState(() {
+              coins = newCoins;
+            });
+            _saveCoins();
+          },
+        ),
       ),
     );
   }
