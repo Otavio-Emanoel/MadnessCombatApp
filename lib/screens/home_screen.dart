@@ -5,6 +5,7 @@ import '../utils/constants.dart';
 import '../models/characters.dart' as madness_models;
 import 'chest_screen.dart';
 import 'character_collection_screen.dart';
+import 'game_mode_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -756,17 +757,13 @@ class _HomePageState extends State<HomePage>
   }
 
   void _navigateToGameScreen(BuildContext context) {
-    setState(() {
-      coins += 1000;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const GameModeScreen()),
+    ).then((_) {
+      // Recarrega dados ao retornar do jogo
+      _loadCoins();
     });
-    _saveCoins();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('+1000 Madness Coins (test mode)!'),
-        backgroundColor: AppColors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
   }
 
   bool get canClaimEasterEgg {
